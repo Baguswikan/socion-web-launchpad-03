@@ -13,11 +13,8 @@ interface ProfileProps {
 const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const [activeTab, setActiveTab] = useState('token');
 
-  // Mock user data
-  const userTokens = [
-    { name: 'SOCION', symbol: 'SCN', balance: '1,250', value: '$3,750.00', change: '+12.5%' },
-    { name: 'Creator Token', symbol: 'CRTR', balance: '500', value: '$1,200.00', change: '+8.2%' },
-  ];
+  // Mock user data - set userTokens to empty array to show "no tokens" state
+  const userTokens: any[] = [];
 
   const userHoldings = [
     { name: 'Bitcoin', symbol: 'BTC', balance: '0.025', value: '$1,150.00', change: '+2.1%' },
@@ -197,21 +194,21 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
           className={`flex-1 py-3 rounded-md ${activeTab === 'token' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('token')}
         >
-          Token
+          TOKEN
         </Button>
         <Button
           variant="ghost"
           className={`flex-1 py-3 rounded-md ${activeTab === 'holding' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('holding')}
         >
-          Holdings
+          HOLDING
         </Button>
         <Button
           variant="ghost"
           className={`flex-1 py-3 rounded-md ${activeTab === 'posts' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('posts')}
         >
-          Posts
+          POST
         </Button>
       </div>
 
