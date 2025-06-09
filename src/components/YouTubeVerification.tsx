@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Youtube, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useDatabase } from '@/hooks/useDatabase';
 
 interface YouTubeVerificationProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
   const [channelData, setChannelData] = useState<{ channelId: string; channelName: string } | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const { verifyYouTubeChannel } = useDatabase();
 
   // Extract channel ID from YouTube URL
   const extractChannelId = (url: string): string | null => {
@@ -37,22 +39,6 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
 
   const generateVerificationCode = () => {
     return `SOCION-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`.toUpperCase();
-  };
-
-  // Mock function to fetch channel description - in production, you'd use YouTube API
-  const fetchChannelDescription = async (channelId: string): Promise<{ description: string; channelName: string }> => {
-    // This is a mock implementation. In production, you would:
-    // 1. Use YouTube Data API v3 to fetch channel info
-    // 2. Check the channel description for the verification token
-    
-    // For demo purposes, simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock response - in real implementation, this would come from YouTube API
-    return {
-      description: `Welcome to my channel! ${verificationCode} Subscribe for more content!`,
-      channelName: `Channel ${channelId}`
-    };
   };
 
   const handleStartVerification = async () => {
@@ -101,11 +87,10 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
     setIsVerifying(true);
     
     try {
-      // Check if the verification code exists in the channel description
-      const { description, channelName } = await fetchChannelDescription(channelData.channelId);
+      // Use the database function to verify the channel
+      const { channelName, verified } = await verifyYouTubeChannel(channelData.channelId, verificationCode);
       
-      // Verify that the token exists in the description
-      if (!description.includes(verificationCode)) {
+      if (!verified) {
         toast({
           title: "Verifikasi Gagal",
           description: "Kode verifikasi tidak ditemukan di deskripsi channel. Pastikan Anda telah menambahkan kode ke deskripsi channel Anda.",
@@ -124,7 +109,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
       // Call parent callback with verified channel data
       onVerified({
         channelId: channelData.channelId,
-        channelName: channelName,
+        channelName: channelName || channelData.channelName,
         verificationToken: verificationCode
       });
       

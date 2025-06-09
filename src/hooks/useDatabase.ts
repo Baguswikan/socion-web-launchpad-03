@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -124,6 +125,7 @@ export const useDatabase = () => {
       // Load user tokens when user is found
       if (data) {
         await getUserTokens(data.id);
+        await getUserVerifications(data.id);
       }
       return data;
     } catch (error) {
@@ -307,6 +309,36 @@ export const useDatabase = () => {
     }
   };
 
+  // Function to verify YouTube channel description contains verification token
+  const verifyYouTubeChannel = async (channelId: string, verificationToken: string): Promise<{ channelName: string; verified: boolean }> => {
+    try {
+      // This is a mock implementation. In a real scenario, you would:
+      // 1. Use YouTube Data API v3 to fetch channel info
+      // 2. Check if the verification token exists in the channel description
+      
+      // For now, we'll simulate the verification process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock verification - in production, replace this with actual YouTube API call
+      const mockChannelName = `Channel ${channelId}`;
+      const mockDescription = `Welcome to my channel! ${verificationToken} Subscribe for more content!`;
+      
+      // Check if token exists in description
+      const verified = mockDescription.includes(verificationToken);
+      
+      return {
+        channelName: mockChannelName,
+        verified
+      };
+    } catch (error) {
+      console.error('Error verifying YouTube channel:', error);
+      return {
+        channelName: '',
+        verified: false
+      };
+    }
+  };
+
   return {
     currentUser,
     userTokens,
@@ -319,6 +351,7 @@ export const useDatabase = () => {
     getUserTokens,
     getAllTokens,
     saveYouTubeVerification,
-    getUserVerifications
+    getUserVerifications,
+    verifyYouTubeChannel
   };
 };

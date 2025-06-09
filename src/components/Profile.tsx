@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
 import { useDatabase, Token } from '@/hooks/useDatabase';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface ProfileProps {
   username: string;
@@ -39,8 +39,8 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const handleCreateToken = () => {
     if (userTokens.length > 0) {
       toast({
-        title: "Limit Reached",
-        description: "You can only create one token per account",
+        title: "Batas Tercapai",
+        description: "Anda hanya dapat membuat satu token per akun",
         variant: "destructive",
       });
       return;
@@ -53,13 +53,13 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
       await updateUserProfile({ description });
       setEditingDescription(false);
       toast({
-        title: "Success",
-        description: "Description updated successfully!",
+        title: "Berhasil",
+        description: "Deskripsi berhasil diperbarui!",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update description",
+        description: "Gagal memperbarui deskripsi",
         variant: "destructive",
       });
     }
@@ -123,7 +123,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-white font-medium text-sm">Your Token</p>
+                          <p className="text-white font-medium text-sm">Token Anda</p>
                           <p className="text-gray-400 text-xs">
                             {new Date(token.created_at).toLocaleDateString()}
                           </p>
@@ -135,12 +135,12 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
               </div>
             ) : (
               <div className="text-center py-20">
-                <h3 className="text-xl font-bold text-white mb-4">YOU DON'T HAVE ANY TOKEN</h3>
+                <h3 className="text-xl font-bold text-white mb-4">ANDA BELUM MEMILIKI TOKEN</h3>
                 <Button 
                   onClick={handleCreateToken}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
                 >
-                  Create Token
+                  Buat Token
                 </Button>
               </div>
             )}
@@ -166,7 +166,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-medium text-sm">Available</p>
+                        <p className="text-white font-medium text-sm">Tersedia</p>
                         <p className="text-gray-400 text-xs">
                           {new Date(token.created_at).toLocaleDateString()}
                         </p>
@@ -177,8 +177,8 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
               ))
             ) : (
               <div className="text-center py-20">
-                <h3 className="text-lg font-bold text-white mb-4">No tokens available</h3>
-                <p className="text-gray-400">Create your first token to get started!</p>
+                <h3 className="text-lg font-bold text-white mb-4">Tidak ada token tersedia</h3>
+                <p className="text-gray-400">Buat token pertama Anda untuk memulai!</p>
               </div>
             )}
           </div>
@@ -188,7 +188,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
         return (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white">Your Videos</h3>
+              <h3 className="text-xl font-bold text-white">Video Anda</h3>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Upload Video
@@ -238,11 +238,11 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
               <h2 className="text-xl font-bold text-white">{username}</h2>
               <div className="text-gray-400 space-y-1">
                 <div className="text-blue-400 font-medium">{getUserRole()}</div>
-                <div>Community Member</div>
-                <div>Verified User</div>
+                <div>Member Komunitas</div>
+                <div>User Terverifikasi</div>
                 <div className="text-xs">
-                  Tokens Created: {userTokens.length}/1
-                  {userTokens.length >= 1 && <span className="text-yellow-400 ml-2">(Max Reached)</span>}
+                  Token Dibuat: {userTokens.length}/1
+                  {userTokens.length >= 1 && <span className="text-yellow-400 ml-2">(Batas Maksimal)</span>}
                 </div>
               </div>
               
@@ -253,14 +253,14 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                     <Textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Write a description about yourself..."
+                      placeholder="Tulis deskripsi tentang diri Anda..."
                       className="bg-gray-700 border-gray-600 text-white text-sm"
                       rows={3}
                     />
                     <div className="flex space-x-2">
                       <Button size="sm" onClick={handleSaveDescription}>
                         <Save className="w-3 h-3 mr-1" />
-                        Save
+                        Simpan
                       </Button>
                       <Button 
                         size="sm" 
@@ -271,14 +271,14 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                         }}
                       >
                         <X className="w-3 h-3 mr-1" />
-                        Cancel
+                        Batal
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-start space-x-2">
                     <p className="text-gray-300 text-sm flex-1">
-                      {description || 'No description added yet.'}
+                      {description || 'Belum ada deskripsi.'}
                     </p>
                     <Button 
                       size="sm" 
@@ -293,10 +293,10 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
               </div>
             </div>
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-white mb-2">Profile</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Profil</h3>
               <Button variant="outline" size="sm" className="border-gray-600 text-gray-300">
                 <Settings className="w-4 h-4 mr-2" />
-                Settings
+                Pengaturan
               </Button>
             </div>
           </div>
