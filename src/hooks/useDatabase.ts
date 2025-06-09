@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,9 +22,22 @@ export interface Token {
   updated_at: string;
 }
 
+export interface YouTubeVerification {
+  id: string;
+  user_id: string;
+  channel_id: string;
+  channel_name: string;
+  verification_token: string;
+  is_verified: boolean;
+  verified_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useDatabase = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userTokens, setUserTokens] = useState<Token[]>([]);
+  const [userVerifications, setUserVerifications] = useState<YouTubeVerification[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Function to save or update user
@@ -120,7 +132,64 @@ export const useDatabase = () => {
     }
   };
 
-  // Function to save token
+  // Function to save YouTube verification
+  const saveYouTubeVerification = async (verificationData: {
+    channelId: string;
+    channelName: string;
+    verificationToken: string;
+  }) => {
+    if (!currentUser) {
+      throw new Error('User not found');
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('youtube_verifications')
+        .insert({
+          user_id: currentUser.id,
+          channel_id: verificationData.channelId,
+          channel_name: verificationData.channelName,
+          verification_token: verificationData.verificationToken,
+          is_verified: true,
+          verified_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Update user's verification list
+      await getUserVerifications(currentUser.id);
+      return data;
+    } catch (error) {
+      console.error('Error saving YouTube verification:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to get user's YouTube verifications
+  const getUserVerifications = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('youtube_verifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setUserVerifications(data || []);
+      return data || [];
+    } catch (error) {
+      console.error('Error getting user verifications:', error);
+      return [];
+    }
+  };
+
+  // Updated saveToken function to include YouTube verification check
   const saveToken = async (tokenData: {
     name: string;
     symbol: string;
@@ -205,12 +274,15 @@ export const useDatabase = () => {
   return {
     currentUser,
     userTokens,
+    userVerifications,
     loading,
     saveUser,
     updateUserProfile,
     getUserByWallet,
     saveToken,
     getUserTokens,
-    getAllTokens
+    getAllTokens,
+    saveYouTubeVerification,
+    getUserVerifications
   };
 };

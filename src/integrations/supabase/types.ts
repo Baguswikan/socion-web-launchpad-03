@@ -80,6 +80,50 @@ export type Database = {
         }
         Relationships: []
       }
+      youtube_verifications: {
+        Row: {
+          channel_id: string
+          channel_name: string
+          created_at: string
+          id: string
+          is_verified: boolean | null
+          updated_at: string
+          user_id: string
+          verification_token: string
+          verified_at: string | null
+        }
+        Insert: {
+          channel_id: string
+          channel_name: string
+          created_at?: string
+          id?: string
+          is_verified?: boolean | null
+          updated_at?: string
+          user_id: string
+          verification_token: string
+          verified_at?: string | null
+        }
+        Update: {
+          channel_id?: string
+          channel_name?: string
+          created_at?: string
+          id?: string
+          is_verified?: boolean | null
+          updated_at?: string
+          user_id?: string
+          verification_token?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "youtube_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
