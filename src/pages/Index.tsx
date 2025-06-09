@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
@@ -17,6 +16,13 @@ const Index = () => {
   const { isConnected, address } = useAccount();
   const { saveUser, getUserByWallet, loading } = useDatabase();
 
+  // Auto-check untuk login otomatis ketika wallet terhubung
+  useEffect(() => {
+    if (isConnected && address && showLogin) {
+      handleAutoLogin();
+    }
+  }, [isConnected, address, showLogin]);
+
   const handleGetStarted = () => {
     setShowWelcome(true);
   };
@@ -31,19 +37,22 @@ const Index = () => {
     setShowCreate(true);
   };
 
-  const handleLoginSubmit = async () => {
-    if (isConnected && address && username) {
+  const handleAutoLogin = async () => {
+    if (isConnected && address) {
       try {
         // Cari user berdasarkan wallet address
         const existingUser = await getUserByWallet(address);
         
         if (existingUser) {
+          // Login berhasil, redirect ke dashboard
           localStorage.setItem('userConnected', 'true');
           localStorage.setItem('username', existingUser.username);
           localStorage.setItem('walletAddress', address);
           navigate('/dashboard');
         } else {
-          alert('User tidak ditemukan. Silakan buat akun baru.');
+          alert('Wallet ini belum terdaftar. Silakan buat akun baru terlebih dahulu.');
+          setShowLogin(false);
+          setShowCreate(true);
         }
       } catch (error) {
         console.error('Login error:', error);
@@ -53,17 +62,33 @@ const Index = () => {
   };
 
   const handleCreateSubmit = async () => {
-    if (isConnected && address && username) {
-      try {
-        await saveUser(username, address);
-        localStorage.setItem('userConnected', 'true');
-        localStorage.setItem('username', username);
-        localStorage.setItem('walletAddress', address);
-        navigate('/dashboard');
-      } catch (error) {
-        console.error('Create account error:', error);
-        alert('Terjadi kesalahan saat membuat akun');
+    if (!username.trim()) {
+      alert('Username harus diisi');
+      return;
+    }
+
+    if (!isConnected || !address) {
+      alert('Silakan hubungkan wallet terlebih dahulu');
+      return;
+    }
+
+    try {
+      // Cek apakah wallet sudah terdaftar
+      const existingUser = await getUserByWallet(address);
+      if (existingUser) {
+        alert('Wallet ini sudah terdaftar dengan username: ' + existingUser.username);
+        return;
       }
+
+      // Buat user baru
+      await saveUser(username, address);
+      localStorage.setItem('userConnected', 'true');
+      localStorage.setItem('username', username);
+      localStorage.setItem('walletAddress', address);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Create account error:', error);
+      alert('Terjadi kesalahan saat membuat akun');
     }
   };
 
@@ -151,45 +176,41 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Login Modal */}
+      {/* Login Modal - Hanya perlu connect wallet */}
       <Dialog open={showLogin} onOpenChange={setShowLogin}>
         <DialogContent className="bg-gray-800 border-gray-700 text-white">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">Add your Username and Connect to Wallet</DialogTitle>
+            <DialogTitle className="text-center text-xl">Login dengan Wallet</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 pt-4">
-            <Input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-            />
+            <p className="text-center text-gray-300">
+              Hubungkan wallet Anda untuk login otomatis
+            </p>
             <div className="flex justify-center">
               <ConnectButton />
             </div>
-            <Button 
-              onClick={handleLoginSubmit}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
-              disabled={!isConnected || !username || loading}
-            >
-              {loading ? 'Loading...' : 'Login'}
-            </Button>
+            {isConnected && (
+              <p className="text-center text-green-400">
+                Wallet terhubung! Mencari akun...
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Create Account Modal */}
+      {/* Create Account Modal - Wajib isi username */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="bg-gray-800 border-gray-700 text-white">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">Add your Username and Connect to Wallet</DialogTitle>
+            <DialogTitle className="text-center text-xl">Buat Akun Baru</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 pt-4">
             <Input
-              placeholder="Username"
+              placeholder="Username (wajib diisi)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              required
             />
             <div className="flex justify-center">
               <ConnectButton />
@@ -197,9 +218,9 @@ const Index = () => {
             <Button 
               onClick={handleCreateSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
-              disabled={!isConnected || !username || loading}
+              disabled={!isConnected || !username.trim() || loading}
             >
-              {loading ? 'Creating...' : 'Create'}
+              {loading ? 'Creating...' : 'Buat Akun'}
             </Button>
           </div>
         </DialogContent>
