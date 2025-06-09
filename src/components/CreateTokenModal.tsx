@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Image } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 
 interface CreateTokenModalProps {
   isOpen: boolean;
@@ -21,7 +21,6 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
   const [youtubeLink, setYoutubeLink] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const { saveToken, loading, userTokens } = useDatabase();
-  const { toast } = useToast();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,7 +39,7 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       // Check if user already has a token
       if (userTokens.length > 0) {
         toast({
-          title: "Error",
+          title: "Limit Reached",
           description: "You can only create one token per account",
           variant: "destructive",
         });
@@ -49,7 +48,7 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
 
       if (!tokenName || !tokenSymbol || !walletAddress) {
         toast({
-          title: "Error", 
+          title: "Missing Information", 
           description: "Please fill in all required fields",
           variant: "destructive",
         });
@@ -69,7 +68,6 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       toast({
         title: "Success",
         description: "Token created successfully!",
-        variant: "default",
       });
 
       onSubmit(tokenData);
@@ -82,13 +80,21 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       setImagePreview('');
       setYoutubeLink('');
       setWalletAddress('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating token:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create token. Please try again.",
-        variant: "destructive",
-      });
+      if (error.message.includes('one token per account')) {
+        toast({
+          title: "Limit Reached",
+          description: "You can only create one token per account",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Creation Failed",
+          description: "Failed to create token. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -142,7 +148,7 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
           />
           
           <Input
-            placeholder="Link Youtube"
+            placeholder="Link Youtube (Optional)"
             value={youtubeLink}
             onChange={(e) => setYoutubeLink(e.target.value)}
             className="bg-transparent border-2 border-gray-600 text-white placeholder-gray-400 rounded-full h-12 px-4 focus:border-blue-500"

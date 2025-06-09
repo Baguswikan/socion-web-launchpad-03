@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useDatabase } from '@/hooks/useDatabase';
+import { toast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const [showWelcome, setShowWelcome] = useState(false);
@@ -49,27 +50,49 @@ const Index = () => {
           localStorage.setItem('userConnected', 'true');
           localStorage.setItem('username', existingUser.username);
           localStorage.setItem('walletAddress', address);
+          
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${existingUser.username}!`,
+          });
+          
           navigate('/dashboard');
         } else {
-          alert('Wallet ini belum terdaftar. Silakan buat akun baru terlebih dahulu.');
+          toast({
+            title: "Wallet Not Registered",
+            description: "This wallet is not registered. Please create a new account.",
+            variant: "destructive",
+          });
           setShowLogin(false);
           setShowCreate(true);
         }
       } catch (error) {
         console.error('Login error:', error);
-        alert('Terjadi kesalahan saat login');
+        toast({
+          title: "Login Error",
+          description: "An error occurred during login. Please try again.",
+          variant: "destructive",
+        });
       }
     }
   };
 
   const handleCreateSubmit = async () => {
     if (!username.trim()) {
-      alert('Username harus diisi');
+      toast({
+        title: "Username Required",
+        description: "Please enter a username to create your account.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!isConnected || !address) {
-      alert('Silakan hubungkan wallet terlebih dahulu');
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet first.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -77,7 +100,11 @@ const Index = () => {
       // Check if wallet is already registered
       const existingUser = await getUserByWallet(address);
       if (existingUser) {
-        alert('Wallet ini sudah terdaftar dengan username: ' + existingUser.username);
+        toast({
+          title: "Wallet Already Registered",
+          description: `This wallet is already registered with username: ${existingUser.username}`,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -86,10 +113,28 @@ const Index = () => {
       localStorage.setItem('userConnected', 'true');
       localStorage.setItem('username', username);
       localStorage.setItem('walletAddress', address);
+      
+      toast({
+        title: "Account Created",
+        description: "Your account has been created successfully!",
+      });
+      
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create account error:', error);
-      alert('Terjadi kesalahan saat membuat akun');
+      if (error.message.includes('duplicate key')) {
+        toast({
+          title: "Username Taken",
+          description: "This username is already taken. Please choose another one.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Account Creation Failed",
+          description: "An error occurred while creating your account. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

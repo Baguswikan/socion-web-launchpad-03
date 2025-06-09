@@ -52,7 +52,7 @@ const Dashboard = () => {
 
   const username = localStorage.getItem('username') || 'User';
 
-  // Dummy trending tokens data
+  // Dummy trending tokens data with more variety
   const dummyTrendingTokens = [
     { name: 'DOGE', price: '$0.12', change: '+8.5%', creator: 'ElonFan' },
     { name: 'PEPE', price: '$0.000001', change: '+15.2%', creator: 'MemeLord' },
@@ -61,7 +61,11 @@ const Dashboard = () => {
     { name: 'BONK', price: '$0.000015', change: '+9.8%', creator: 'SolanaFan' },
     { name: 'WIF', price: '$2.45', change: '+22.1%', creator: 'DogHat' },
     { name: 'POPCAT', price: '$1.23', change: '+7.4%', creator: 'CatLover' },
-    { name: 'MOG', price: '$0.00000123', change: '+18.9%', creator: 'MogMaster' }
+    { name: 'MOG', price: '$0.00000123', change: '+18.9%', creator: 'MogMaster' },
+    { name: 'BRETT', price: '$0.045', change: '+13.7%', creator: 'BasedDev' },
+    { name: 'BOOK', price: '$0.0087', change: '+6.2%', creator: 'ReadMore' },
+    { name: 'ANDY', price: '$0.00234', change: '+25.8%', creator: 'ToyStory' },
+    { name: 'TOSHI', price: '$0.000567', change: '+11.4%', creator: 'CoinbaseFan' }
   ];
 
   // Convert database tokens to trending format and merge with dummy data
@@ -73,7 +77,7 @@ const Dashboard = () => {
   }));
 
   // Combine real and dummy tokens
-  const trendingTokens = [...databaseTokens, ...dummyTrendingTokens].slice(0, 8);
+  const allTrendingTokens = [...databaseTokens, ...dummyTrendingTokens];
 
   // Trending YouTube videos with embedded URLs
   const trendingVideos = [
@@ -104,7 +108,7 @@ const Dashboard = () => {
     { 
       title: 'Blockchain Technology Simplified', 
       embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-      views: '1.7K views',
+      views: '1.7M views',
       time: '5 days ago'
     },
     { 
@@ -112,6 +116,18 @@ const Dashboard = () => {
       embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       views: '875K views',
       time: '1 week ago'
+    },
+    { 
+      title: 'Meme Coins: The Good, Bad & Ugly', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '634K views',
+      time: '1 week ago'
+    },
+    { 
+      title: 'How to Create Your Own Token', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '421K views',
+      time: '2 weeks ago'
     },
   ];
 
@@ -121,7 +137,7 @@ const Dashboard = () => {
   );
 
   // Filter tokens based on search query
-  const filteredTokens = trendingTokens.filter(token =>
+  const filteredTokens = allTrendingTokens.filter(token =>
     token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     token.creator.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -227,7 +243,7 @@ const Dashboard = () => {
         {/* Trending Sidebar */}
         <aside className="w-80 bg-gray-900 border-l border-gray-800 p-6">
           <h2 className="text-xl font-bold text-blue-400 mb-6">Trending Token</h2>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
             {filteredTokens.length > 0 ? (
               filteredTokens.map((token, index) => (
                 <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">

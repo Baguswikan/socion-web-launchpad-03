@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
 import { useDatabase, Token } from '@/hooks/useDatabase';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 
 interface ProfileProps {
   username: string;
@@ -20,7 +20,6 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const [description, setDescription] = useState('');
   const { currentUser, userTokens, getUserTokens, getAllTokens, updateUserProfile } = useDatabase();
   const [allTokens, setAllTokens] = useState<Token[]>([]);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Load user tokens
