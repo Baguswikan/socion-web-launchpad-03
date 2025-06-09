@@ -12,12 +12,12 @@ interface ProfileProps {
 
 const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const [activeTab, setActiveTab] = useState('token');
-  // Mock user data - in real app this would come from props or state management
-  const [userTokens, setUserTokens] = useState([
-    // Start with empty array to show the "no tokens" state
-    // { name: 'SOCION', symbol: 'SCN', balance: '1,250', value: '$3,750.00', change: '+12.5%' },
-    // { name: 'Creator Token', symbol: 'CRTR', balance: '500', value: '$1,200.00', change: '+8.2%' },
-  ]);
+
+  // Mock user data
+  const userTokens = [
+    { name: 'SOCION', symbol: 'SCN', balance: '1,250', value: '$3,750.00', change: '+12.5%' },
+    { name: 'Creator Token', symbol: 'CRTR', balance: '500', value: '$1,200.00', change: '+8.2%' },
+  ];
 
   const userHoldings = [
     { name: 'Bitcoin', symbol: 'BTC', balance: '0.025', value: '$1,150.00', change: '+2.1%' },
@@ -46,115 +46,46 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
     },
   ];
 
-  // Add new token to the user's tokens list
-  const addToken = (tokenData: any) => {
-    const newToken = {
-      name: tokenData.name,
-      symbol: tokenData.symbol,
-      balance: '1,000', // Default balance
-      value: '$100.00', // Default value
-      change: '+0.0%'
-    };
-    setUserTokens(prev => [...prev, newToken]);
-  };
-
-  // Profile layout when user has NO tokens
-  if (userTokens.length === 0) {
-    return (
-      <div className="p-6 space-y-6">
-        {/* Profile Header */}
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback className="bg-pink-400 text-white">
-                  <User className="w-8 h-8" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-white">{username}</h2>
-                <div className="text-gray-400 space-y-1">
-                  <div>Address</div>
-                  <div>Verification</div>
-                  <div>Follower</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-white mb-2">Deskripsi</h3>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 bg-blue-600 rounded-lg p-1">
-          <Button
-            variant="ghost"
-            className="flex-1 py-3 rounded-md bg-blue-600 text-white"
-          >
-            TOKEN
-          </Button>
-          <Button
-            variant="ghost"
-            className="flex-1 py-3 rounded-md text-white opacity-60"
-          >
-            HOLDING
-          </Button>
-          <Button
-            variant="ghost"
-            className="flex-1 py-3 rounded-md text-white opacity-60"
-          >
-            POST
-          </Button>
-        </div>
-
-        {/* No Tokens Content */}
-        <div className="text-center py-20">
-          <h3 className="text-xl font-bold text-white mb-6">YOU DOESN'T HAVE ANY TOKEN</h3>
-          <Button 
-            onClick={() => {
-              console.log('Create Token button clicked');
-              onCreateToken();
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
-          >
-            Create Token
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Profile layout when user HAS tokens (existing functionality)
   const renderTabContent = () => {
     switch (activeTab) {
       case 'token':
         return (
           <div className="space-y-6">
-            <div className="grid gap-4">
-              {userTokens.map((token, index) => (
-                <Card key={index} className="bg-gray-800 border-gray-700">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">{token.symbol}</span>
+            {userTokens.length > 0 ? (
+              <div className="grid gap-4">
+                {userTokens.map((token, index) => (
+                  <Card key={index} className="bg-gray-800 border-gray-700">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">{token.symbol}</span>
+                          </div>
+                          <div>
+                            <h3 className="text-white font-medium">{token.name}</h3>
+                            <p className="text-gray-400 text-sm">{token.balance} {token.symbol}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-white font-medium">{token.name}</h3>
-                          <p className="text-gray-400 text-sm">{token.balance} {token.symbol}</p>
+                        <div className="text-right">
+                          <p className="text-white font-medium">{token.value}</p>
+                          <p className="text-green-400 text-sm">{token.change}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-white font-medium">{token.value}</p>
-                        <p className="text-green-400 text-sm">{token.change}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <h3 className="text-xl font-bold text-white mb-4">YOU DON'T HAVE ANY TOKEN</h3>
+                <Button 
+                  onClick={onCreateToken}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
+                >
+                  Create Token
+                </Button>
+              </div>
+            )}
           </div>
         );
 
