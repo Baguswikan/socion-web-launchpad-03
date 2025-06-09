@@ -12,7 +12,6 @@ import CreateTokenModal from '@/components/CreateTokenModal';
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('TOKEN');
   const [showCreateToken, setShowCreateToken] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
@@ -89,49 +88,31 @@ const Dashboard = () => {
       return <Profile username={username} onCreateToken={() => setShowCreateToken(true)} />;
     }
 
-    switch (activeTab) {
-      case 'TOKEN':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {trendingVideos.map((video, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors">
-                <CardContent className="p-4">
-                  <div className="aspect-video mb-3 rounded-lg overflow-hidden">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      src={video.embedUrl}
-                      title={video.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="rounded-lg"
-                    ></iframe>
-                  </div>
-                  <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{video.title}</h3>
-                  <p className="text-gray-400 text-xs">{video.views} • {video.time}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        );
-      case 'HOLDING':
-        return (
-          <div className="text-center py-20">
-            <h3 className="text-xl text-gray-400">Your Token Holdings</h3>
-            <p className="text-gray-500 mt-2">No tokens in your wallet yet</p>
-          </div>
-        );
-      case 'POST':
-        return (
-          <div className="text-center py-20">
-            <h3 className="text-xl text-gray-400">Your Posts</h3>
-            <p className="text-gray-500 mt-2">No posts created yet</p>
-          </div>
-        );
-      default:
-        return null;
-    }
+    // Only show trending videos on home
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {trendingVideos.map((video, index) => (
+          <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors">
+            <CardContent className="p-4">
+              <div className="aspect-video mb-3 rounded-lg overflow-hidden">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={video.embedUrl}
+                  title={video.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="rounded-lg"
+                ></iframe>
+              </div>
+              <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{video.title}</h3>
+              <p className="text-gray-400 text-xs">{video.views} • {video.time}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -170,35 +151,10 @@ const Dashboard = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className={`${activeTab === 'TOKEN' ? 'text-blue-400' : 'text-gray-400'} hover:text-blue-300`}
-              onClick={() => {
-                setActiveTab('TOKEN');
-                setShowProfile(false);
-              }}
+              className={`${!showProfile ? 'text-blue-400' : 'text-gray-400'} hover:text-blue-300`}
+              onClick={() => setShowProfile(false)}
             >
               <Home className="w-6 h-6" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={`${activeTab === 'HOLDING' ? 'text-blue-400' : 'text-gray-400'} hover:text-white`}
-              onClick={() => {
-                setActiveTab('HOLDING');
-                setShowProfile(false);
-              }}
-            >
-              <Coins className="w-6 h-6" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={`${activeTab === 'POST' ? 'text-blue-400' : 'text-gray-400'} hover:text-white`}
-              onClick={() => {
-                setActiveTab('POST');
-                setShowProfile(false);
-              }}
-            >
-              <Wallet className="w-6 h-6" />
             </Button>
             <Button 
               variant="ghost" 
@@ -212,35 +168,7 @@ const Dashboard = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1">
-          {!showProfile && (
-            <div className="bg-gray-800 border-b border-gray-700">
-              <div className="flex">
-                <Button
-                  variant="ghost"
-                  className={`flex-1 py-4 rounded-none ${activeTab === 'TOKEN' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                  onClick={() => setActiveTab('TOKEN')}
-                >
-                  TOKEN
-                </Button>
-                <Button
-                  variant="ghost"
-                  className={`flex-1 py-4 rounded-none ${activeTab === 'HOLDING' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                  onClick={() => setActiveTab('HOLDING')}
-                >
-                  HOLDING
-                </Button>
-                <Button
-                  variant="ghost"
-                  className={`flex-1 py-4 rounded-none ${activeTab === 'POST' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                  onClick={() => setActiveTab('POST')}
-                >
-                  POST
-                </Button>
-              </div>
-            </div>
-          )}
-          
+        <main className="flex-1">          
           <div className="p-6">
             {renderMainContent()}
           </div>
