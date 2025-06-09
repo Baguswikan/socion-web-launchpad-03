@@ -6,6 +6,8 @@ export interface User {
   id: string;
   username: string;
   wallet_address: string;
+  profile_photo?: string;
+  description?: string;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +65,32 @@ export const useDatabase = () => {
       }
     } catch (error) {
       console.error('Error saving user:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to update user profile
+  const updateUserProfile = async (profileData: { profile_photo?: string; description?: string }) => {
+    if (!currentUser) {
+      throw new Error('User not found');
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(profileData)
+        .eq('id', currentUser.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setCurrentUser(data);
+      return data;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -179,6 +207,7 @@ export const useDatabase = () => {
     userTokens,
     loading,
     saveUser,
+    updateUserProfile,
     getUserByWallet,
     saveToken,
     getUserTokens,

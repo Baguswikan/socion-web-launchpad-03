@@ -1,8 +1,11 @@
+
 import { useState, useEffect } from 'react';
-import { User, Settings, Plus } from 'lucide-react';
+import { User, Settings, Plus, Edit2, Save, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
 import { useDatabase, Token } from '@/hooks/useDatabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,17 +16,20 @@ interface ProfileProps {
 
 const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const [activeTab, setActiveTab] = useState('token');
-  const { currentUser, userTokens, getUserTokens, getAllTokens } = useDatabase();
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [description, setDescription] = useState('');
+  const { currentUser, userTokens, getUserTokens, getAllTokens, updateUserProfile } = useDatabase();
   const [allTokens, setAllTokens] = useState<Token[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Ambil token milik user saat ini
+    // Load user tokens
     if (currentUser) {
       getUserTokens(currentUser.id);
+      setDescription(currentUser.description || '');
     }
     
-    // Ambil semua token untuk holding tab
+    // Load all tokens for holding tab
     const fetchAllTokens = async () => {
       const tokens = await getAllTokens();
       setAllTokens(tokens);
@@ -41,6 +47,28 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
       return;
     }
     onCreateToken();
+  };
+
+  const handleSaveDescription = async () => {
+    try {
+      await updateUserProfile({ description });
+      setEditingDescription(false);
+      toast({
+        title: "Success",
+        description: "Description updated successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update description",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Determine user role based on token ownership
+  const getUserRole = () => {
+    return userTokens.length > 0 ? 'Content Creator' : 'User';
   };
 
   const userPosts = [
@@ -203,23 +231,66 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
       <Card className="bg-gray-800 border-gray-700">
         <CardContent className="p-6">
           <div className="flex items-center space-x-4">
-            <Avatar className="w-16 h-16">
-              <AvatarImage src="/placeholder.svg" />
-              <AvatarFallback className="bg-pink-400 text-white">
-                <User className="w-8 h-8" />
-              </AvatarFallback>
-            </Avatar>
+            <ProfilePhotoUpload 
+              currentPhotoUrl={currentUser?.profile_photo} 
+              username={username} 
+            />
             <div className="flex-1">
               <h2 className="text-xl font-bold text-white">{username}</h2>
               <div className="text-gray-400 space-y-1">
-                <div>Content Creator</div>
-                <div>Token Holder</div>
+                <div className="text-blue-400 font-medium">{getUserRole()}</div>
                 <div>Community Member</div>
                 <div>Verified User</div>
                 <div className="text-xs">
                   Tokens Created: {userTokens.length}/1
                   {userTokens.length >= 1 && <span className="text-yellow-400 ml-2">(Max Reached)</span>}
                 </div>
+              </div>
+              
+              {/* Description Section */}
+              <div className="mt-3">
+                {editingDescription ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Write a description about yourself..."
+                      className="bg-gray-700 border-gray-600 text-white text-sm"
+                      rows={3}
+                    />
+                    <div className="flex space-x-2">
+                      <Button size="sm" onClick={handleSaveDescription}>
+                        <Save className="w-3 h-3 mr-1" />
+                        Save
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingDescription(false);
+                          setDescription(currentUser?.description || '');
+                        }}
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start space-x-2">
+                    <p className="text-gray-300 text-sm flex-1">
+                      {description || 'No description added yet.'}
+                    </p>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => setEditingDescription(true)}
+                      className="text-gray-400 hover:text-white p-1"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-center">

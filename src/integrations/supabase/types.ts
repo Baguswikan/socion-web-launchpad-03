@@ -53,21 +53,27 @@ export type Database = {
       users: {
         Row: {
           created_at: string
+          description: string | null
           id: string
+          profile_photo: string | null
           updated_at: string
           username: string
           wallet_address: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
+          profile_photo?: string | null
           updated_at?: string
           username: string
           wallet_address: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
+          profile_photo?: string | null
           updated_at?: string
           username?: string
           wallet_address?: string

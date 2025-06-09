@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -51,13 +52,28 @@ const Dashboard = () => {
 
   const username = localStorage.getItem('username') || 'User';
 
-  // Convert database tokens to trending format
-  const trendingTokens = allTokens.slice(0, 8).map((token: any, index) => ({
+  // Dummy trending tokens data
+  const dummyTrendingTokens = [
+    { name: 'DOGE', price: '$0.12', change: '+8.5%', creator: 'ElonFan' },
+    { name: 'PEPE', price: '$0.000001', change: '+15.2%', creator: 'MemeLord' },
+    { name: 'SHIB', price: '$0.000008', change: '+5.7%', creator: 'CryptoKing' },
+    { name: 'FLOKI', price: '$0.00002', change: '+12.3%', creator: 'VikingTrader' },
+    { name: 'BONK', price: '$0.000015', change: '+9.8%', creator: 'SolanaFan' },
+    { name: 'WIF', price: '$2.45', change: '+22.1%', creator: 'DogHat' },
+    { name: 'POPCAT', price: '$1.23', change: '+7.4%', creator: 'CatLover' },
+    { name: 'MOG', price: '$0.00000123', change: '+18.9%', creator: 'MogMaster' }
+  ];
+
+  // Convert database tokens to trending format and merge with dummy data
+  const databaseTokens = allTokens.slice(0, 4).map((token: any, index) => ({
     name: token.symbol,
     price: `$${(Math.random() * 5 + 0.1).toFixed(2)}`,
     change: `+${(Math.random() * 10 + 1).toFixed(1)}%`,
     creator: token.users?.username || 'Unknown'
   }));
+
+  // Combine real and dummy tokens
+  const trendingTokens = [...databaseTokens, ...dummyTrendingTokens].slice(0, 8);
 
   // Trending YouTube videos with embedded URLs
   const trendingVideos = [
@@ -99,34 +115,52 @@ const Dashboard = () => {
     },
   ];
 
+  // Filter videos based on search query
+  const filteredVideos = trendingVideos.filter(video =>
+    video.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter tokens based on search query
+  const filteredTokens = trendingTokens.filter(token =>
+    token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    token.creator.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const renderMainContent = () => {
     if (showProfile) {
       return <Profile username={username} onCreateToken={() => setShowCreateToken(true)} />;
     }
 
-    // Only show trending videos on home
+    // Show filtered videos on home
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {trendingVideos.map((video, index) => (
-          <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors">
-            <CardContent className="p-4">
-              <div className="aspect-video mb-3 rounded-lg overflow-hidden">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={video.embedUrl}
-                  title={video.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="rounded-lg"
-                ></iframe>
-              </div>
-              <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{video.title}</h3>
-              <p className="text-gray-400 text-xs">{video.views} • {video.time}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {filteredVideos.length > 0 ? (
+          filteredVideos.map((video, index) => (
+            <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors">
+              <CardContent className="p-4">
+                <div className="aspect-video mb-3 rounded-lg overflow-hidden">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={video.embedUrl}
+                    title={video.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="rounded-lg"
+                  ></iframe>
+                </div>
+                <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{video.title}</h3>
+                <p className="text-gray-400 text-xs">{video.views} • {video.time}</p>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-20">
+            <h3 className="text-xl font-bold text-white mb-4">No videos found</h3>
+            <p className="text-gray-400">Try searching for something else</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -140,7 +174,7 @@ const Dashboard = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search"
+              placeholder="Search videos or tokens..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-full"
@@ -194,8 +228,8 @@ const Dashboard = () => {
         <aside className="w-80 bg-gray-900 border-l border-gray-800 p-6">
           <h2 className="text-xl font-bold text-blue-400 mb-6">Trending Token</h2>
           <div className="space-y-4">
-            {trendingTokens.length > 0 ? (
-              trendingTokens.map((token, index) => (
+            {filteredTokens.length > 0 ? (
+              filteredTokens.map((token, index) => (
                 <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -214,6 +248,10 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               ))
+            ) : searchQuery ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400">No tokens found for "{searchQuery}"</p>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-400">No tokens available yet</p>
