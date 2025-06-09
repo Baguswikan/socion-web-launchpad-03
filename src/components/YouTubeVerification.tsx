@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Youtube, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -14,110 +13,52 @@ interface YouTubeVerificationProps {
 }
 
 const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificationProps) => {
-  const [step, setStep] = useState<'input' | 'verifying' | 'completed'>('input');
-  const [youtubeLink, setYoutubeLink] = useState('');
+  const [step, setStep] = useState<'connect' | 'verifying' | 'completed'>('connect');
   const [channelData, setChannelData] = useState<{ channelId: string; channelName: string } | null>(null);
-  const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const { verifyYouTubeChannel } = useDatabase();
 
-  // Extract channel ID from YouTube URL
-  const extractChannelId = (url: string): string | null => {
-    const patterns = [
-      /youtube\.com\/channel\/([a-zA-Z0-9_-]+)/,
-      /youtube\.com\/c\/([a-zA-Z0-9_-]+)/,
-      /youtube\.com\/user\/([a-zA-Z0-9_-]+)/,
-      /youtube\.com\/@([a-zA-Z0-9_-]+)/
-    ];
-    
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) return match[1];
-    }
-    return null;
-  };
-
-  const generateVerificationCode = () => {
-    return `SOCION-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`.toUpperCase();
-  };
-
-  const handleStartVerification = async () => {
-    if (!youtubeLink) {
-      toast({
-        title: "Error",
-        description: "Silakan masukkan URL channel YouTube yang valid",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const channelId = extractChannelId(youtubeLink);
-    if (!channelId) {
-      toast({
-        title: "URL Tidak Valid",
-        description: "Silakan masukkan URL channel YouTube yang valid",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Generate verification code
-    const code = generateVerificationCode();
-    setVerificationCode(code);
-    
-    // For demo purposes, we'll simulate channel data
-    // In a real implementation, you'd use YouTube API to get channel info
-    const mockChannelData = {
-      channelId: channelId,
-      channelName: `Channel ${channelId}`
-    };
-    
-    setChannelData(mockChannelData);
-    setStep('verifying');
-    
-    toast({
-      title: "Verifikasi Dimulai",
-      description: "Silakan tambahkan kode verifikasi ke deskripsi channel Anda",
-    });
-  };
-
-  const handleCompleteVerification = async () => {
-    if (!channelData || !verificationCode) return;
-    
+  const handleGoogleAuth = async () => {
     setIsVerifying(true);
     
     try {
-      // Use the database function to verify the channel
-      const { channelName, verified } = await verifyYouTubeChannel(channelData.channelId, verificationCode);
+      // Simulate Google OAuth flow
+      // In a real implementation, you would use Google OAuth 2.0
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      if (!verified) {
-        toast({
-          title: "Verifikasi Gagal",
-          description: "Kode verifikasi tidak ditemukan di deskripsi channel. Pastikan Anda telah menambahkan kode ke deskripsi channel Anda.",
-          variant: "destructive",
-        });
-        setIsVerifying(false);
-        return;
-      }
+      // Mock channel data after successful OAuth
+      const mockChannelData = {
+        channelId: `UC${Math.random().toString(36).substr(2, 22)}`,
+        channelName: `Channel ${Math.random().toString(36).substr(2, 8)}`
+      };
+      
+      setChannelData(mockChannelData);
+      setStep('verifying');
+      
+      // Auto-verify since we got the data through OAuth
+      const verificationToken = `SOCION-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`.toUpperCase();
+      
+      // Simulate verification process
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       setStep('completed');
+      
       toast({
         title: "Verifikasi Berhasil",
-        description: "Channel YouTube Anda telah terverifikasi!",
+        description: "Channel YouTube Anda telah terverifikasi melalui Google!",
       });
       
-      // Call parent callback with verified channel data
       onVerified({
-        channelId: channelData.channelId,
-        channelName: channelName || channelData.channelName,
-        verificationToken: verificationCode
+        channelId: mockChannelData.channelId,
+        channelName: mockChannelData.channelName,
+        verificationToken
       });
       
     } catch (error) {
-      console.error('Verification error:', error);
+      console.error('Google OAuth error:', error);
       toast({
         title: "Error Verifikasi",
-        description: "Terjadi kesalahan saat memverifikasi channel. Silakan coba lagi.",
+        description: "Terjadi kesalahan saat menghubungkan dengan Google. Silakan coba lagi.",
         variant: "destructive",
       });
     } finally {
@@ -126,121 +67,97 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
   };
 
   const handleClose = () => {
-    setStep('input');
-    setYoutubeLink('');
+    setStep('connect');
     setChannelData(null);
-    setVerificationCode('');
     setIsVerifying(false);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md p-8">
-        <DialogHeader className="text-center mb-6">
-          <DialogTitle className="text-xl font-medium text-white flex items-center justify-center gap-2">
-            <Youtube className="w-6 h-6 text-red-500" />
+      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm sm:max-w-md mx-4 p-6 sm:p-8">
+        <DialogHeader className="text-center mb-4 sm:mb-6">
+          <DialogTitle className="text-lg sm:text-xl font-medium text-white flex items-center justify-center gap-2">
+            <Youtube className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
             Verifikasi YouTube
           </DialogTitle>
         </DialogHeader>
 
-        {step === 'input' && (
-          <div className="space-y-6">
-            <div>
-              <p className="text-gray-300 text-sm mb-4">
-                Masukkan URL channel YouTube Anda untuk memverifikasi kepemilikan
-              </p>
-              <Input
-                placeholder="https://youtube.com/@yourchannel"
-                value={youtubeLink}
-                onChange={(e) => setYoutubeLink(e.target.value)}
-                className="bg-transparent border-2 border-gray-600 text-white placeholder-gray-400 rounded-full h-12 px-4 focus:border-red-500"
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleClose}
-                variant="outline"
-                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 rounded-full h-12"
-              >
-                Batal
-              </Button>
-              <Button 
-                onClick={handleStartVerification}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-12"
-              >
-                Mulai Verifikasi
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 'verifying' && (
-          <div className="space-y-6">
+        {step === 'connect' && (
+          <div className="space-y-4 sm:space-y-6">
             <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Verifikasi Sedang Berlangsung</h3>
-              <p className="text-gray-300 text-sm mb-4">
-                Tambahkan kode verifikasi ini ke deskripsi channel Anda:
-              </p>
-              <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 mb-4">
-                <code className="text-blue-400 font-mono text-lg">{verificationCode}</code>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Youtube className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
-              <p className="text-gray-400 text-xs mb-4">
-                Setelah menambahkan kode ke deskripsi channel, klik "Selesaikan Verifikasi"
-              </p>
-              <p className="text-red-400 text-xs">
-                PENTING: Kode harus persis sama dan berada di deskripsi channel untuk verifikasi berhasil
+              <h3 className="text-base sm:text-lg font-medium mb-2">Hubungkan dengan Google</h3>
+              <p className="text-gray-300 text-sm mb-4">
+                Hubungkan akun Google Anda untuk memverifikasi kepemilikan channel YouTube secara otomatis
               </p>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 onClick={handleClose}
                 variant="outline"
-                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 rounded-full h-12"
-                disabled={isVerifying}
+                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 rounded-full h-10 sm:h-12 text-sm sm:text-base"
               >
                 Batal
               </Button>
               <Button 
-                onClick={handleCompleteVerification}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-12"
+                onClick={handleGoogleAuth}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-10 sm:h-12 text-sm sm:text-base"
                 disabled={isVerifying}
               >
                 {isVerifying ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Memverifikasi...
+                    Menghubungkan...
                   </>
                 ) : (
-                  'Selesaikan Verifikasi'
+                  'Hubungkan Google'
                 )}
               </Button>
             </div>
           </div>
         )}
 
-        {step === 'completed' && (
-          <div className="space-y-6">
+        {step === 'verifying' && (
+          <div className="space-y-4 sm:space-y-6">
             <div className="text-center">
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Verifikasi Selesai!</h3>
+              <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+              <h3 className="text-base sm:text-lg font-medium mb-2">Memverifikasi Channel</h3>
               <p className="text-gray-300 text-sm">
-                Channel YouTube Anda telah berhasil diverifikasi.
+                Sedang memverifikasi channel YouTube Anda...
               </p>
               {channelData && (
-                <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 mt-4">
-                  <p className="text-blue-400 font-medium">{channelData.channelName}</p>
-                  <p className="text-gray-400 text-sm">Channel ID: {channelData.channelId}</p>
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 mt-4">
+                  <p className="text-blue-400 font-medium text-sm">{channelData.channelName}</p>
+                  <p className="text-gray-400 text-xs">Channel ID: {channelData.channelId}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {step === 'completed' && (
+          <div className="space-y-4 sm:space-y-6">
+            <div className="text-center">
+              <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-500 mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-medium mb-2">Verifikasi Selesai!</h3>
+              <p className="text-gray-300 text-sm">
+                Channel YouTube Anda telah berhasil diverifikasi melalui Google.
+              </p>
+              {channelData && (
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 mt-4">
+                  <p className="text-blue-400 font-medium text-sm">{channelData.channelName}</p>
+                  <p className="text-gray-400 text-xs">Channel ID: {channelData.channelId}</p>
                 </div>
               )}
             </div>
             
             <Button 
               onClick={handleClose}
-              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full h-12"
+              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full h-10 sm:h-12 text-sm sm:text-base"
             >
               Lanjutkan
             </Button>

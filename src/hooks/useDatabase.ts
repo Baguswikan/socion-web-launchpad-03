@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,6 +7,7 @@ export interface User {
   wallet_address: string;
   profile_photo?: string;
   description?: string;
+  role?: 'user' | 'content_creator';
   created_at: string;
   updated_at: string;
 }
@@ -68,7 +68,7 @@ export const useDatabase = () => {
         // Create new user
         const { data, error } = await supabase
           .from('users')
-          .insert({ username, wallet_address: walletAddress })
+          .insert({ username, wallet_address: walletAddress, role: 'user' })
           .select()
           .single();
 
@@ -85,7 +85,7 @@ export const useDatabase = () => {
   };
 
   // Function to update user profile
-  const updateUserProfile = async (profileData: { profile_photo?: string; description?: string }) => {
+  const updateUserProfile = async (profileData: { profile_photo?: string; description?: string; role?: 'user' | 'content_creator' }) => {
     if (!currentUser) {
       throw new Error('User not found');
     }
@@ -122,7 +122,6 @@ export const useDatabase = () => {
       if (error && error.code !== 'PGRST116') throw error;
       
       setCurrentUser(data);
-      // Load user tokens when user is found
       if (data) {
         await getUserTokens(data.id);
         await getUserVerifications(data.id);
