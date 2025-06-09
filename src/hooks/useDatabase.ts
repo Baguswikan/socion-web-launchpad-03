@@ -26,11 +26,11 @@ export const useDatabase = () => {
   const [userTokens, setUserTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fungsi untuk menyimpan atau mengupdate user
+  // Function to save or update user
   const saveUser = async (username: string, walletAddress: string) => {
     setLoading(true);
     try {
-      // Cek apakah user sudah ada berdasarkan wallet address
+      // Check if user already exists based on wallet address
       const { data: existingUser } = await supabase
         .from('users')
         .select('*')
@@ -38,7 +38,7 @@ export const useDatabase = () => {
         .single();
 
       if (existingUser) {
-        // Update user yang sudah ada
+        // Update existing user
         const { data, error } = await supabase
           .from('users')
           .update({ username, updated_at: new Date().toISOString() })
@@ -50,7 +50,7 @@ export const useDatabase = () => {
         setCurrentUser(data);
         return data;
       } else {
-        // Buat user baru
+        // Create new user
         const { data, error } = await supabase
           .from('users')
           .insert({ username, wallet_address: walletAddress })
@@ -69,7 +69,7 @@ export const useDatabase = () => {
     }
   };
 
-  // Fungsi untuk mengambil data user berdasarkan wallet address
+  // Function to get user by wallet address
   const getUserByWallet = async (walletAddress: string) => {
     try {
       const { data, error } = await supabase
@@ -88,7 +88,7 @@ export const useDatabase = () => {
     }
   };
 
-  // Fungsi untuk menyimpan token
+  // Function to save token
   const saveToken = async (tokenData: {
     name: string;
     symbol: string;
@@ -115,7 +115,7 @@ export const useDatabase = () => {
 
       if (error) throw error;
       
-      // Update daftar token user
+      // Update user's token list
       await getUserTokens(currentUser.id);
       return data;
     } catch (error) {
@@ -126,7 +126,7 @@ export const useDatabase = () => {
     }
   };
 
-  // Fungsi untuk mengambil token milik user
+  // Function to get user's tokens
   const getUserTokens = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -145,7 +145,7 @@ export const useDatabase = () => {
     }
   };
 
-  // Fungsi untuk mengambil semua token (untuk trending)
+  // Function to get all tokens (for trending)
   const getAllTokens = async () => {
     try {
       const { data, error } = await supabase

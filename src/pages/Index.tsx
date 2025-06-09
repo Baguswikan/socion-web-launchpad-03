@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -16,7 +17,7 @@ const Index = () => {
   const { isConnected, address } = useAccount();
   const { saveUser, getUserByWallet, loading } = useDatabase();
 
-  // Auto-check untuk login otomatis ketika wallet terhubung
+  // Auto-check for automatic login when wallet is connected
   useEffect(() => {
     if (isConnected && address && showLogin) {
       handleAutoLogin();
@@ -40,11 +41,11 @@ const Index = () => {
   const handleAutoLogin = async () => {
     if (isConnected && address) {
       try {
-        // Cari user berdasarkan wallet address
+        // Find user based on wallet address
         const existingUser = await getUserByWallet(address);
         
         if (existingUser) {
-          // Login berhasil, redirect ke dashboard
+          // Login successful, redirect to dashboard
           localStorage.setItem('userConnected', 'true');
           localStorage.setItem('username', existingUser.username);
           localStorage.setItem('walletAddress', address);
@@ -73,14 +74,14 @@ const Index = () => {
     }
 
     try {
-      // Cek apakah wallet sudah terdaftar
+      // Check if wallet is already registered
       const existingUser = await getUserByWallet(address);
       if (existingUser) {
         alert('Wallet ini sudah terdaftar dengan username: ' + existingUser.username);
         return;
       }
 
-      // Buat user baru
+      // Create new user
       await saveUser(username, address);
       localStorage.setItem('userConnected', 'true');
       localStorage.setItem('username', username);
@@ -176,7 +177,7 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Login Modal - Hanya perlu connect wallet */}
+      {/* Login Modal - Only need to connect wallet */}
       <Dialog open={showLogin} onOpenChange={setShowLogin}>
         <DialogContent className="bg-gray-800 border-gray-700 text-white">
           <DialogHeader>
@@ -198,7 +199,7 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Account Modal - Wajib isi username */}
+      {/* Create Account Modal - Must fill username */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="bg-gray-800 border-gray-700 text-white">
           <DialogHeader>
