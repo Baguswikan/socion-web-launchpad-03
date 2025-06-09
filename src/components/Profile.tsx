@@ -1,9 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Settings, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useDatabase, Token } from '@/hooks/useDatabase';
 
 interface ProfileProps {
   username: string;
@@ -12,15 +13,22 @@ interface ProfileProps {
 
 const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const [activeTab, setActiveTab] = useState('token');
+  const { currentUser, userTokens, getUserTokens, getAllTokens } = useDatabase();
+  const [allTokens, setAllTokens] = useState<Token[]>([]);
 
-  // Mock user data - set userTokens to empty array to show "no tokens" state
-  const userTokens: any[] = [];
-
-  const userHoldings = [
-    { name: 'Bitcoin', symbol: 'BTC', balance: '0.025', value: '$1,150.00', change: '+2.1%' },
-    { name: 'Ethereum', symbol: 'ETH', balance: '1.5', value: '$2,850.00', change: '+4.8%' },
-    { name: 'USDC', symbol: 'USDC', balance: '500', value: '$500.00', change: '0.0%' },
-  ];
+  useEffect(() => {
+    // Ambil token milik user saat ini
+    if (currentUser) {
+      getUserTokens(currentUser.id);
+    }
+    
+    // Ambil semua token untuk holding tab
+    const fetchAllTokens = async () => {
+      const tokens = await getAllTokens();
+      setAllTokens(tokens);
+    };
+    fetchAllTokens();
+  }, [currentUser, getUserTokens, getAllTokens]);
 
   const userPosts = [
     { 
@@ -50,8 +58,8 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
           <div className="space-y-6">
             {userTokens.length > 0 ? (
               <div className="grid gap-4">
-                {userTokens.map((token, index) => (
-                  <Card key={index} className="bg-gray-800 border-gray-700">
+                {userTokens.map((token) => (
+                  <Card key={token.id} className="bg-gray-800 border-gray-700">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -60,12 +68,24 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                           </div>
                           <div>
                             <h3 className="text-white font-medium">{token.name}</h3>
-                            <p className="text-gray-400 text-sm">{token.balance} {token.symbol}</p>
+                            <p className="text-gray-400 text-sm">{token.symbol}</p>
+                            {token.youtube_link && (
+                              <a 
+                                href={token.youtube_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-400 text-xs hover:underline"
+                              >
+                                YouTube Link
+                              </a>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-white font-medium">{token.value}</p>
-                          <p className="text-green-400 text-sm">{token.change}</p>
+                          <p className="text-white font-medium text-sm">Created</p>
+                          <p className="text-gray-400 text-xs">
+                            {new Date(token.created_at).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -89,29 +109,36 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
       case 'holding':
         return (
           <div className="space-y-4">
-            {userHoldings.map((holding, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">{holding.symbol}</span>
+            {allTokens.length > 0 ? (
+              allTokens.map((token) => (
+                <Card key={token.id} className="bg-gray-800 border-gray-700">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">{token.symbol}</span>
+                        </div>
+                        <div>
+                          <h3 className="text-white font-medium">{token.name}</h3>
+                          <p className="text-gray-400 text-sm">{token.symbol}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-white font-medium">{holding.name}</h3>
-                        <p className="text-gray-400 text-sm">{holding.balance} {holding.symbol}</p>
+                      <div className="text-right">
+                        <p className="text-white font-medium text-sm">Available</p>
+                        <p className="text-gray-400 text-xs">
+                          {new Date(token.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-white font-medium">{holding.value}</p>
-                      <p className={`text-sm ${holding.change.startsWith('+') ? 'text-green-400' : 'text-gray-400'}`}>
-                        {holding.change}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-20">
+                <h3 className="text-lg font-bold text-white mb-4">No tokens available</h3>
+                <p className="text-gray-400">Create your first token to get started!</p>
+              </div>
+            )}
           </div>
         );
 
@@ -174,6 +201,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                 <div>Token Holder</div>
                 <div>Community Member</div>
                 <div>Verified User</div>
+                <div className="text-xs">Tokens Created: {userTokens.length}</div>
               </div>
             </div>
             <div className="text-center">

@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useDatabase } from '@/hooks/useDatabase';
 
 const Index = () => {
   const [showWelcome, setShowWelcome] = useState(false);
@@ -13,7 +14,8 @@ const Index = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [username, setUsername] = useState('');
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
+  const { saveUser, getUserByWallet, loading } = useDatabase();
 
   const handleGetStarted = () => {
     setShowWelcome(true);
@@ -29,19 +31,39 @@ const Index = () => {
     setShowCreate(true);
   };
 
-  const handleLoginSubmit = () => {
-    if (isConnected && username) {
-      localStorage.setItem('userConnected', 'true');
-      localStorage.setItem('username', username);
-      navigate('/dashboard');
+  const handleLoginSubmit = async () => {
+    if (isConnected && address && username) {
+      try {
+        // Cari user berdasarkan wallet address
+        const existingUser = await getUserByWallet(address);
+        
+        if (existingUser) {
+          localStorage.setItem('userConnected', 'true');
+          localStorage.setItem('username', existingUser.username);
+          localStorage.setItem('walletAddress', address);
+          navigate('/dashboard');
+        } else {
+          alert('User tidak ditemukan. Silakan buat akun baru.');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Terjadi kesalahan saat login');
+      }
     }
   };
 
-  const handleCreateSubmit = () => {
-    if (isConnected && username) {
-      localStorage.setItem('userConnected', 'true');
-      localStorage.setItem('username', username);
-      navigate('/dashboard');
+  const handleCreateSubmit = async () => {
+    if (isConnected && address && username) {
+      try {
+        await saveUser(username, address);
+        localStorage.setItem('userConnected', 'true');
+        localStorage.setItem('username', username);
+        localStorage.setItem('walletAddress', address);
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Create account error:', error);
+        alert('Terjadi kesalahan saat membuat akun');
+      }
     }
   };
 
@@ -148,9 +170,9 @@ const Index = () => {
             <Button 
               onClick={handleLoginSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
-              disabled={!isConnected || !username}
+              disabled={!isConnected || !username || loading}
             >
-              Login
+              {loading ? 'Loading...' : 'Login'}
             </Button>
           </div>
         </DialogContent>
@@ -175,9 +197,9 @@ const Index = () => {
             <Button 
               onClick={handleCreateSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
-              disabled={!isConnected || !username}
+              disabled={!isConnected || !username || loading}
             >
-              Create
+              {loading ? 'Creating...' : 'Create'}
             </Button>
           </div>
         </DialogContent>

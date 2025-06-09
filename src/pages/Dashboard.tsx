@@ -1,47 +1,62 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useDisconnect } from 'wagmi';
-import { Search, Home, Coins, Wallet, LogOut, User } from 'lucide-react';
+import { Search, Home, LogOut, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Profile from '@/components/Profile';
 import CreateTokenModal from '@/components/CreateTokenModal';
+import { useDatabase } from '@/hooks/useDatabase';
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateToken, setShowCreateToken] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
+  const { getUserByWallet, getAllTokens } = useDatabase();
+  const [allTokens, setAllTokens] = useState([]);
 
   const handleLogout = () => {
     disconnect();
     localStorage.removeItem('userConnected');
     localStorage.removeItem('username');
+    localStorage.removeItem('walletAddress');
     navigate('/');
   };
 
   const handleCreateToken = (tokenData: any) => {
     console.log('Creating token:', tokenData);
-    // Here you would typically send this data to your backend
+    // Refresh token list
+    loadTokens();
   };
+
+  const loadTokens = async () => {
+    const tokens = await getAllTokens();
+    setAllTokens(tokens);
+  };
+
+  useEffect(() => {
+    // Load user data and tokens when component mounts
+    const walletAddress = localStorage.getItem('walletAddress');
+    if (walletAddress) {
+      getUserByWallet(walletAddress);
+    }
+    loadTokens();
+  }, [getUserByWallet]);
 
   const username = localStorage.getItem('username') || 'User';
 
-  const trendingTokens = [
-    { name: 'TOL', price: '$1.25', change: '+5.2%' },
-    { name: 'TOL', price: '$0.89', change: '+3.8%' },
-    { name: 'TOL', price: '$2.15', change: '+7.1%' },
-    { name: 'TOL', price: '$0.45', change: '+2.3%' },
-    { name: 'TOL', price: '$1.78', change: '+4.6%' },
-    { name: 'TOL', price: '$0.92', change: '+1.9%' },
-    { name: 'TOL', price: '$3.21', change: '+8.4%' },
-    { name: 'TOL', price: '$1.56', change: '+6.7%' },
-  ];
+  // Convert database tokens to trending format
+  const trendingTokens = allTokens.slice(0, 8).map((token: any, index) => ({
+    name: token.symbol,
+    price: `$${(Math.random() * 5 + 0.1).toFixed(2)}`,
+    change: `+${(Math.random() * 10 + 1).toFixed(1)}%`
+  }));
 
   // Trending YouTube videos with embedded URLs
   const trendingVideos = [
@@ -178,25 +193,31 @@ const Dashboard = () => {
         <aside className="w-80 bg-gray-900 border-l border-gray-800 p-6">
           <h2 className="text-xl font-bold text-blue-400 mb-6">Trending Token</h2>
           <div className="space-y-4">
-            {trendingTokens.map((token, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">{token.name}</span>
+            {trendingTokens.length > 0 ? (
+              trendingTokens.map((token, index) => (
+                <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{token.name}</span>
+                      </div>
+                      <div>
+                        <div className="text-white font-medium text-sm">{token.name}</div>
+                        <div className="text-gray-400 text-xs">Token Name</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-white font-medium text-sm">{token.name}</div>
-                      <div className="text-gray-400 text-xs">Token Name</div>
+                    <div className="text-right">
+                      <div className="text-white font-medium text-sm">{token.price}</div>
+                      <div className="text-green-400 text-xs">{token.change}</div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-white font-medium text-sm">{token.price}</div>
-                    <div className="text-green-400 text-xs">{token.change}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400">No tokens available yet</p>
+              </div>
+            )}
           </div>
         </aside>
       </div>

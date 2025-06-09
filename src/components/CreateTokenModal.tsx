@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useDatabase } from '@/hooks/useDatabase';
 
 interface CreateTokenModalProps {
   isOpen: boolean;
@@ -15,20 +16,33 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
   const [tokenSymbol, setTokenSymbol] = useState('');
   const [youtubeLink, setYoutubeLink] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
+  const { saveToken, loading } = useDatabase();
 
-  const handleSubmit = () => {
-    onSubmit({
-      name: tokenName,
-      symbol: tokenSymbol,
-      youtubeLink,
-      walletAddress
-    });
-    onClose();
-    // Reset form
-    setTokenName('');
-    setTokenSymbol('');
-    setYoutubeLink('');
-    setWalletAddress('');
+  const handleSubmit = async () => {
+    try {
+      const tokenData = {
+        name: tokenName,
+        symbol: tokenSymbol,
+        youtubeLink,
+        walletAddress
+      };
+
+      // Simpan ke database
+      await saveToken(tokenData);
+      
+      // Panggil callback
+      onSubmit(tokenData);
+      onClose();
+      
+      // Reset form
+      setTokenName('');
+      setTokenSymbol('');
+      setYoutubeLink('');
+      setWalletAddress('');
+    } catch (error) {
+      console.error('Error creating token:', error);
+      alert('Terjadi kesalahan saat membuat token');
+    }
   };
 
   return (
@@ -69,8 +83,9 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
           <Button 
             onClick={handleSubmit}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-full font-medium h-12 mt-8"
+            disabled={!tokenName || !tokenSymbol || !walletAddress || loading}
           >
-            Next
+            {loading ? 'Creating...' : 'Next'}
           </Button>
         </div>
       </DialogContent>
