@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Upload, Image, Youtube, CheckCircle } from 'lucide-react';
+import { Upload, Youtube, CheckCircle } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useAccount } from 'wagmi';
 import { toast } from '@/hooks/use-toast';
@@ -20,10 +20,15 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
   const [tokenSymbol, setTokenSymbol] = useState('');
   const [tokenImage, setTokenImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [inputWalletAddress, setInputWalletAddress] = useState('');
   const [youtubeVerified, setYoutubeVerified] = useState(false);
-  const [verifiedChannelData, setVerifiedChannelData] = useState<{ channelId: string; channelName: string } | null>(null);
+  const [verifiedChannelData, setVerifiedChannelData] = useState<{ 
+    channelId: string; 
+    channelName: string; 
+    verificationToken: string 
+  } | null>(null);
   const [showYouTubeVerification, setShowYouTubeVerification] = useState(false);
-  const { saveToken, loading, userTokens, currentUser } = useDatabase();
+  const { saveToken, saveYouTubeVerification, loading, userTokens, currentUser } = useDatabase();
   const { address } = useAccount();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,10 +43,54 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
     }
   };
 
-  const handleYouTubeVerified = (channelData: { channelId: string; channelName: string }) => {
+  const handleYouTubeVerified = (channelData: { channelId: string; channelName: string; verificationToken: string }) => {
     setYoutubeVerified(true);
     setVerifiedChannelData(channelData);
     setShowYouTubeVerification(false);
+  };
+
+  const validateWalletAddress = (): boolean => {
+    // Check if user is logged in and has wallet connected
+    if (!currentUser || !address) {
+      toast({
+        title: "Wallet Tidak Terhubung",
+        description: "Silakan hubungkan wallet Anda",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check if input wallet address is provided
+    if (!inputWalletAddress.trim()) {
+      toast({
+        title: "Wallet Address Diperlukan",
+        description: "Silakan masukkan wallet address Anda",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Validate that input wallet address matches connected wallet
+    if (inputWalletAddress.toLowerCase() !== address.toLowerCase()) {
+      toast({
+        title: "Wallet Address Tidak Sesuai",
+        description: "Wallet address yang dimasukkan harus sama dengan wallet yang terhubung",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Validate that input wallet address matches registered wallet
+    if (inputWalletAddress.toLowerCase() !== currentUser.wallet_address.toLowerCase()) {
+      toast({
+        title: "Wallet Address Tidak Sesuai",
+        description: "Wallet address yang dimasukkan harus sama dengan yang terdaftar saat login",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -49,8 +98,8 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       // Check if user already has a token
       if (userTokens.length > 0) {
         toast({
-          title: "Limit Reached",
-          description: "You can only create one token per account",
+          title: "Batas Tercapai",
+          description: "Anda hanya dapat membuat satu token per akun",
           variant: "destructive",
         });
         return;
@@ -59,55 +108,55 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       // Validate required fields
       if (!tokenName || !tokenSymbol) {
         toast({
-          title: "Missing Information", 
-          description: "Please fill in all required fields",
+          title: "Informasi Tidak Lengkap", 
+          description: "Silakan isi semua field yang diperlukan",
           variant: "destructive",
         });
+        return;
+      }
+
+      // Validate wallet address
+      if (!validateWalletAddress()) {
         return;
       }
 
       // Validate YouTube verification
       if (!youtubeVerified || !verifiedChannelData) {
         toast({
-          title: "YouTube Verification Required",
-          description: "Please verify your YouTube channel before creating a token",
+          title: "Verifikasi YouTube Diperlukan",
+          description: "Silakan verifikasi channel YouTube Anda sebelum membuat token",
           variant: "destructive",
         });
         return;
       }
 
-      // Validate wallet address matches current user
-      if (!currentUser || !address) {
-        toast({
-          title: "Wallet Not Connected",
-          description: "Please connect your wallet",
-          variant: "destructive",
-        });
-        return;
-      }
+      console.log('Creating token with verified data:', {
+        tokenName,
+        tokenSymbol,
+        walletAddress: inputWalletAddress,
+        verifiedChannelData
+      });
 
-      if (currentUser.wallet_address.toLowerCase() !== address.toLowerCase()) {
-        toast({
-          title: "Wallet Mismatch",
-          description: "Connected wallet must match your registered wallet address",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Save YouTube verification to database first
+      await saveYouTubeVerification({
+        channelId: verifiedChannelData.channelId,
+        channelName: verifiedChannelData.channelName,
+        verificationToken: verifiedChannelData.verificationToken
+      });
 
       const tokenData = {
         name: tokenName,
         symbol: tokenSymbol,
         youtubeLink: `https://youtube.com/channel/${verifiedChannelData.channelId}`,
-        walletAddress: currentUser.wallet_address,
+        walletAddress: inputWalletAddress,
         image: tokenImage
       };
 
       await saveToken(tokenData);
       
       toast({
-        title: "Success",
-        description: "Token created successfully!",
+        title: "Berhasil",
+        description: "Token berhasil dibuat!",
       });
 
       onSubmit(tokenData);
@@ -118,20 +167,21 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       setTokenSymbol('');
       setTokenImage(null);
       setImagePreview('');
+      setInputWalletAddress('');
       setYoutubeVerified(false);
       setVerifiedChannelData(null);
     } catch (error: any) {
       console.error('Error creating token:', error);
       if (error.message.includes('one token per account')) {
         toast({
-          title: "Limit Reached",
-          description: "You can only create one token per account",
+          title: "Batas Tercapai",
+          description: "Anda hanya dapat membuat satu token per akun",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Creation Failed",
-          description: "Failed to create token. Please try again.",
+          title: "Pembuatan Gagal",
+          description: "Gagal membuat token. Silakan coba lagi.",
           variant: "destructive",
         });
       }
@@ -144,6 +194,7 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
     setTokenSymbol('');
     setTokenImage(null);
     setImagePreview('');
+    setInputWalletAddress('');
     setYoutubeVerified(false);
     setVerifiedChannelData(null);
     onClose();
@@ -154,11 +205,11 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md p-8">
           <DialogHeader className="text-center mb-6">
-            <DialogTitle className="text-xl font-medium text-white">Make your Token FR</DialogTitle>
+            <DialogTitle className="text-xl font-medium text-white">Buat Token Anda</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <Input
-              placeholder="Token Name"
+              placeholder="Nama Token"
               value={tokenName}
               onChange={(e) => setTokenName(e.target.value)}
               className="bg-transparent border-2 border-gray-600 text-white placeholder-gray-400 rounded-full h-12 px-4 focus:border-blue-500"
@@ -166,14 +217,14 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
             
             {/* Token Symbol Image Upload */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Token Symbol (Image)</label>
+              <label className="block text-sm font-medium text-gray-300">Simbol Token (Gambar)</label>
               <div className="flex items-center space-x-4">
                 <div className="flex-1">
                   <label className="flex items-center justify-center w-full h-12 border-2 border-gray-600 border-dashed rounded-full cursor-pointer hover:border-blue-500 transition-colors">
                     <div className="flex items-center space-x-2">
                       <Upload className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-400">
-                        {tokenImage ? tokenImage.name : 'Upload Symbol Image'}
+                        {tokenImage ? tokenImage.name : 'Upload Gambar Simbol'}
                       </span>
                     </div>
                     <input
@@ -193,7 +244,7 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
             </div>
 
             <Input
-              placeholder="Symbol Text (e.g., BTC, ETH)"
+              placeholder="Simbol Teks (contoh: BTC, ETH)"
               value={tokenSymbol}
               onChange={(e) => setTokenSymbol(e.target.value)}
               className="bg-transparent border-2 border-gray-600 text-white placeholder-gray-400 rounded-full h-12 px-4 focus:border-blue-500"
@@ -201,7 +252,7 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
             
             {/* YouTube Verification Section */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">YouTube Channel Verification</label>
+              <label className="block text-sm font-medium text-gray-300">Verifikasi Channel YouTube</label>
               <div className="flex items-center space-x-4">
                 <Button
                   type="button"
@@ -216,12 +267,12 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
                   {youtubeVerified ? (
                     <>
                       <CheckCircle className="w-4 h-4" />
-                      <span>Verified</span>
+                      <span>Terverifikasi</span>
                     </>
                   ) : (
                     <>
                       <Youtube className="w-4 h-4" />
-                      <span>Verify YouTube</span>
+                      <span>Verifikasi YouTube</span>
                     </>
                   )}
                 </Button>
@@ -229,30 +280,39 @@ const CreateTokenModal = ({ isOpen, onClose, onSubmit }: CreateTokenModalProps) 
               {youtubeVerified && verifiedChannelData && (
                 <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 mt-2">
                   <p className="text-green-400 text-sm font-medium">{verifiedChannelData.channelName}</p>
-                  <p className="text-gray-400 text-xs">Channel verified successfully</p>
+                  <p className="text-gray-400 text-xs">Channel berhasil diverifikasi</p>
                 </div>
               )}
             </div>
             
-            {/* Wallet Address Display */}
+            {/* Wallet Address Input */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-300">Wallet Address</label>
-              <div className="bg-gray-800 border border-gray-600 rounded-full h-12 px-4 flex items-center">
-                <span className="text-gray-300 text-sm">
-                  {currentUser?.wallet_address || 'Not connected'}
-                </span>
+              <Input
+                placeholder="Masukkan wallet address Anda"
+                value={inputWalletAddress}
+                onChange={(e) => setInputWalletAddress(e.target.value)}
+                className="bg-transparent border-2 border-gray-600 text-white placeholder-gray-400 rounded-full h-12 px-4 focus:border-blue-500"
+              />
+              <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 mt-2">
+                <p className="text-gray-300 text-xs">
+                  <strong>Wallet Terhubung:</strong> {address || 'Tidak terhubung'}
+                </p>
+                <p className="text-gray-300 text-xs">
+                  <strong>Wallet Terdaftar:</strong> {currentUser?.wallet_address || 'Tidak ada'}
+                </p>
               </div>
               <p className="text-gray-400 text-xs">
-                This must match your connected wallet address
+                Wallet address harus sama dengan yang terhubung dan terdaftar saat login
               </p>
             </div>
             
             <Button 
               onClick={handleSubmit}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-full font-medium h-12 mt-8"
-              disabled={!tokenName || !tokenSymbol || !youtubeVerified || loading}
+              disabled={!tokenName || !tokenSymbol || !youtubeVerified || !inputWalletAddress || loading}
             >
-              {loading ? 'Creating...' : 'Create Token'}
+              {loading ? 'Membuat...' : 'Buat Token'}
             </Button>
           </div>
         </DialogContent>

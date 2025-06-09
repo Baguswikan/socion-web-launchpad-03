@@ -144,24 +144,55 @@ export const useDatabase = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Check if verification already exists for this user and channel
+      const { data: existingVerification } = await supabase
         .from('youtube_verifications')
-        .insert({
-          user_id: currentUser.id,
-          channel_id: verificationData.channelId,
-          channel_name: verificationData.channelName,
-          verification_token: verificationData.verificationToken,
-          is_verified: true,
-          verified_at: new Date().toISOString()
-        })
-        .select()
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('channel_id', verificationData.channelId)
         .single();
 
-      if (error) throw error;
-      
-      // Update user's verification list
-      await getUserVerifications(currentUser.id);
-      return data;
+      if (existingVerification) {
+        // Update existing verification
+        const { data, error } = await supabase
+          .from('youtube_verifications')
+          .update({
+            channel_name: verificationData.channelName,
+            verification_token: verificationData.verificationToken,
+            is_verified: true,
+            verified_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingVerification.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        
+        // Update user's verification list
+        await getUserVerifications(currentUser.id);
+        return data;
+      } else {
+        // Create new verification
+        const { data, error } = await supabase
+          .from('youtube_verifications')
+          .insert({
+            user_id: currentUser.id,
+            channel_id: verificationData.channelId,
+            channel_name: verificationData.channelName,
+            verification_token: verificationData.verificationToken,
+            is_verified: true,
+            verified_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        
+        // Update user's verification list
+        await getUserVerifications(currentUser.id);
+        return data;
+      }
     } catch (error) {
       console.error('Error saving YouTube verification:', error);
       throw error;
@@ -204,6 +235,11 @@ export const useDatabase = () => {
     // Check if user already has a token
     if (userTokens.length > 0) {
       throw new Error('You can only create one token per account');
+    }
+
+    // Validate that the wallet address matches the current user's registered wallet
+    if (tokenData.walletAddress.toLowerCase() !== currentUser.wallet_address.toLowerCase()) {
+      throw new Error('Wallet address must match your registered wallet address');
     }
 
     setLoading(true);

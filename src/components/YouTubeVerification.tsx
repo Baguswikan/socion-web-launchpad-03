@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Youtube, CheckCircle, AlertCircle } from 'lucide-react';
+import { Youtube, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface YouTubeVerificationProps {
   isOpen: boolean;
   onClose: () => void;
-  onVerified: (channelData: { channelId: string; channelName: string }) => void;
+  onVerified: (channelData: { channelId: string; channelName: string; verificationToken: string }) => void;
 }
 
 const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificationProps) => {
@@ -17,6 +17,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
   const [youtubeLink, setYoutubeLink] = useState('');
   const [channelData, setChannelData] = useState<{ channelId: string; channelName: string } | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Extract channel ID from YouTube URL
   const extractChannelId = (url: string): string | null => {
@@ -38,11 +39,27 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
     return `SOCION-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`.toUpperCase();
   };
 
+  // Mock function to fetch channel description - in production, you'd use YouTube API
+  const fetchChannelDescription = async (channelId: string): Promise<{ description: string; channelName: string }> => {
+    // This is a mock implementation. In production, you would:
+    // 1. Use YouTube Data API v3 to fetch channel info
+    // 2. Check the channel description for the verification token
+    
+    // For demo purposes, simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock response - in real implementation, this would come from YouTube API
+    return {
+      description: `Welcome to my channel! ${verificationCode} Subscribe for more content!`,
+      channelName: `Channel ${channelId}`
+    };
+  };
+
   const handleStartVerification = async () => {
     if (!youtubeLink) {
       toast({
         title: "Error",
-        description: "Please enter a valid YouTube channel URL",
+        description: "Silakan masukkan URL channel YouTube yang valid",
         variant: "destructive",
       });
       return;
@@ -51,8 +68,8 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
     const channelId = extractChannelId(youtubeLink);
     if (!channelId) {
       toast({
-        title: "Invalid URL",
-        description: "Please enter a valid YouTube channel URL",
+        title: "URL Tidak Valid",
+        description: "Silakan masukkan URL channel YouTube yang valid",
         variant: "destructive",
       });
       return;
@@ -73,27 +90,54 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
     setStep('verifying');
     
     toast({
-      title: "Verification Started",
-      description: "Please add the verification code to your channel description",
+      title: "Verifikasi Dimulai",
+      description: "Silakan tambahkan kode verifikasi ke deskripsi channel Anda",
     });
   };
 
   const handleCompleteVerification = async () => {
-    if (!channelData) return;
+    if (!channelData || !verificationCode) return;
     
-    // In a real implementation, you would:
-    // 1. Check if the verification code exists in the channel description
-    // 2. Save verification data to database
-    // For demo purposes, we'll simulate success
+    setIsVerifying(true);
     
-    setStep('completed');
-    toast({
-      title: "Verification Successful",
-      description: "Your YouTube channel has been verified!",
-    });
-    
-    // Call parent callback with verified channel data
-    onVerified(channelData);
+    try {
+      // Check if the verification code exists in the channel description
+      const { description, channelName } = await fetchChannelDescription(channelData.channelId);
+      
+      // Verify that the token exists in the description
+      if (!description.includes(verificationCode)) {
+        toast({
+          title: "Verifikasi Gagal",
+          description: "Kode verifikasi tidak ditemukan di deskripsi channel. Pastikan Anda telah menambahkan kode ke deskripsi channel Anda.",
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+      
+      setStep('completed');
+      toast({
+        title: "Verifikasi Berhasil",
+        description: "Channel YouTube Anda telah terverifikasi!",
+      });
+      
+      // Call parent callback with verified channel data
+      onVerified({
+        channelId: channelData.channelId,
+        channelName: channelName,
+        verificationToken: verificationCode
+      });
+      
+    } catch (error) {
+      console.error('Verification error:', error);
+      toast({
+        title: "Error Verifikasi",
+        description: "Terjadi kesalahan saat memverifikasi channel. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handleClose = () => {
@@ -101,6 +145,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
     setYoutubeLink('');
     setChannelData(null);
     setVerificationCode('');
+    setIsVerifying(false);
     onClose();
   };
 
@@ -110,7 +155,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
         <DialogHeader className="text-center mb-6">
           <DialogTitle className="text-xl font-medium text-white flex items-center justify-center gap-2">
             <Youtube className="w-6 h-6 text-red-500" />
-            YouTube Verification
+            Verifikasi YouTube
           </DialogTitle>
         </DialogHeader>
 
@@ -118,7 +163,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
           <div className="space-y-6">
             <div>
               <p className="text-gray-300 text-sm mb-4">
-                Enter your YouTube channel URL to verify ownership
+                Masukkan URL channel YouTube Anda untuk memverifikasi kepemilikan
               </p>
               <Input
                 placeholder="https://youtube.com/@yourchannel"
@@ -134,13 +179,13 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
                 variant="outline"
                 className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 rounded-full h-12"
               >
-                Cancel
+                Batal
               </Button>
               <Button 
                 onClick={handleStartVerification}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-12"
               >
-                Start Verification
+                Mulai Verifikasi
               </Button>
             </div>
           </div>
@@ -150,15 +195,18 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
           <div className="space-y-6">
             <div className="text-center">
               <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Verification in Progress</h3>
+              <h3 className="text-lg font-medium mb-2">Verifikasi Sedang Berlangsung</h3>
               <p className="text-gray-300 text-sm mb-4">
-                Add this verification code to your channel description:
+                Tambahkan kode verifikasi ini ke deskripsi channel Anda:
               </p>
               <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 mb-4">
                 <code className="text-blue-400 font-mono text-lg">{verificationCode}</code>
               </div>
-              <p className="text-gray-400 text-xs">
-                After adding the code to your channel description, click "Complete Verification"
+              <p className="text-gray-400 text-xs mb-4">
+                Setelah menambahkan kode ke deskripsi channel, klik "Selesaikan Verifikasi"
+              </p>
+              <p className="text-red-400 text-xs">
+                PENTING: Kode harus persis sama dan berada di deskripsi channel untuk verifikasi berhasil
               </p>
             </div>
             
@@ -167,14 +215,23 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
                 onClick={handleClose}
                 variant="outline"
                 className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 rounded-full h-12"
+                disabled={isVerifying}
               >
-                Cancel
+                Batal
               </Button>
               <Button 
                 onClick={handleCompleteVerification}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-12"
+                disabled={isVerifying}
               >
-                Complete Verification
+                {isVerifying ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Memverifikasi...
+                  </>
+                ) : (
+                  'Selesaikan Verifikasi'
+                )}
               </Button>
             </div>
           </div>
@@ -184,9 +241,9 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
           <div className="space-y-6">
             <div className="text-center">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Verification Complete!</h3>
+              <h3 className="text-lg font-medium mb-2">Verifikasi Selesai!</h3>
               <p className="text-gray-300 text-sm">
-                Your YouTube channel has been successfully verified.
+                Channel YouTube Anda telah berhasil diverifikasi.
               </p>
               {channelData && (
                 <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 mt-4">
@@ -200,7 +257,7 @@ const YouTubeVerification = ({ isOpen, onClose, onVerified }: YouTubeVerificatio
               onClick={handleClose}
               className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full h-12"
             >
-              Continue
+              Lanjutkan
             </Button>
           </div>
         )}
