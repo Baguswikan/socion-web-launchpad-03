@@ -44,13 +44,44 @@ const Dashboard = () => {
     { name: 'TOL', price: '$1.56', change: '+6.7%' },
   ];
 
-  const videoContent = [
-    { title: 'Bahasa Uang, Longevity, dan Kesehatan', views: '1.2K views', time: '2 hours ago' },
-    { title: 'Bahasa Uang, Longevity, dan Kesehatan', views: '856 views', time: '4 hours ago' },
-    { title: 'Bahasa Uang, Longevity, dan Kesehatan', views: '2.1K views', time: '6 hours ago' },
-    { title: 'Bahasa Uang, Longevity, dan Kesehatan', views: '943 views', time: '8 hours ago' },
-    { title: 'Bahasa Uang, Longevity, dan Kesehatan', views: '1.7K views', time: '10 hours ago' },
-    { title: 'Bahasa Uang, Longevity, dan Kesehatan', views: '675 views', time: '12 hours ago' },
+  // Trending YouTube videos with embedded URLs
+  const trendingVideos = [
+    { 
+      title: 'The Future of Cryptocurrency in 2024', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '2.5M views',
+      time: '1 day ago'
+    },
+    { 
+      title: 'DeFi Explained: Complete Beginner Guide', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '1.8M views',
+      time: '2 days ago'
+    },
+    { 
+      title: 'Top 10 Altcoins to Watch This Week', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '1.2M views',
+      time: '3 days ago'
+    },
+    { 
+      title: 'NFT Market Analysis & Trends', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '950K views',
+      time: '4 days ago'
+    },
+    { 
+      title: 'Blockchain Technology Simplified', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '1.7K views',
+      time: '5 days ago'
+    },
+    { 
+      title: 'Smart Contracts Tutorial', 
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      views: '875K views',
+      time: '1 week ago'
+    },
   ];
 
   const renderMainContent = () => {
@@ -62,13 +93,20 @@ const Dashboard = () => {
       case 'TOKEN':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {videoContent.map((video, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors cursor-pointer">
+            {trendingVideos.map((video, index) => (
+              <Card key={index} className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-colors">
                 <CardContent className="p-4">
-                  <div className="aspect-video bg-gray-700 rounded-lg mb-3 flex items-center justify-center">
-                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                      <div className="w-0 h-0 border-l-4 border-l-white border-t-2 border-t-transparent border-b-2 border-b-transparent ml-1"></div>
-                    </div>
+                  <div className="aspect-video mb-3 rounded-lg overflow-hidden">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={video.embedUrl}
+                      title={video.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="rounded-lg"
+                    ></iframe>
                   </div>
                   <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{video.title}</h3>
                   <p className="text-gray-400 text-xs">{video.views} • {video.time}</p>
