@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { User, Settings, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useDatabase, Token } from '@/hooks/useDatabase';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileProps {
   username: string;
@@ -15,6 +15,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
   const [activeTab, setActiveTab] = useState('token');
   const { currentUser, userTokens, getUserTokens, getAllTokens } = useDatabase();
   const [allTokens, setAllTokens] = useState<Token[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Ambil token milik user saat ini
@@ -29,6 +30,18 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
     };
     fetchAllTokens();
   }, [currentUser, getUserTokens, getAllTokens]);
+
+  const handleCreateToken = () => {
+    if (userTokens.length > 0) {
+      toast({
+        title: "Limit Reached",
+        description: "You can only create one token per account",
+        variant: "destructive",
+      });
+      return;
+    }
+    onCreateToken();
+  };
 
   const userPosts = [
     { 
@@ -69,6 +82,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                           <div>
                             <h3 className="text-white font-medium">{token.name}</h3>
                             <p className="text-gray-400 text-sm">{token.symbol}</p>
+                            <p className="text-gray-500 text-xs">Wallet: {token.wallet_address}</p>
                             {token.youtube_link && (
                               <a 
                                 href={token.youtube_link} 
@@ -82,7 +96,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-white font-medium text-sm">Created</p>
+                          <p className="text-white font-medium text-sm">Your Token</p>
                           <p className="text-gray-400 text-xs">
                             {new Date(token.created_at).toLocaleDateString()}
                           </p>
@@ -96,7 +110,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
               <div className="text-center py-20">
                 <h3 className="text-xl font-bold text-white mb-4">YOU DON'T HAVE ANY TOKEN</h3>
                 <Button 
-                  onClick={onCreateToken}
+                  onClick={handleCreateToken}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
                 >
                   Create Token
@@ -121,6 +135,7 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                         <div>
                           <h3 className="text-white font-medium">{token.name}</h3>
                           <p className="text-gray-400 text-sm">{token.symbol}</p>
+                          <p className="text-gray-500 text-xs">Address: {token.wallet_address}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -201,7 +216,10 @@ const Profile = ({ username, onCreateToken }: ProfileProps) => {
                 <div>Token Holder</div>
                 <div>Community Member</div>
                 <div>Verified User</div>
-                <div className="text-xs">Tokens Created: {userTokens.length}</div>
+                <div className="text-xs">
+                  Tokens Created: {userTokens.length}/1
+                  {userTokens.length >= 1 && <span className="text-yellow-400 ml-2">(Max Reached)</span>}
+                </div>
               </div>
             </div>
             <div className="text-center">

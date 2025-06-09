@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -7,6 +6,7 @@ import { Search, Home, LogOut, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Toaster } from '@/components/ui/toaster';
 import Profile from '@/components/Profile';
 import CreateTokenModal from '@/components/CreateTokenModal';
 import { useDatabase } from '@/hooks/useDatabase';
@@ -18,7 +18,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
-  const { getUserByWallet, getAllTokens } = useDatabase();
+  const { getUserByWallet, getAllTokens, userTokens } = useDatabase();
   const [allTokens, setAllTokens] = useState([]);
 
   const handleLogout = () => {
@@ -55,7 +55,8 @@ const Dashboard = () => {
   const trendingTokens = allTokens.slice(0, 8).map((token: any, index) => ({
     name: token.symbol,
     price: `$${(Math.random() * 5 + 0.1).toFixed(2)}`,
-    change: `+${(Math.random() * 10 + 1).toFixed(1)}%`
+    change: `+${(Math.random() * 10 + 1).toFixed(1)}%`,
+    creator: token.users?.username || 'Unknown'
   }));
 
   // Trending YouTube videos with embedded URLs
@@ -203,7 +204,7 @@ const Dashboard = () => {
                       </div>
                       <div>
                         <div className="text-white font-medium text-sm">{token.name}</div>
-                        <div className="text-gray-400 text-xs">Token Name</div>
+                        <div className="text-gray-400 text-xs">by {token.creator}</div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -227,6 +228,8 @@ const Dashboard = () => {
         onClose={() => setShowCreateToken(false)}
         onSubmit={handleCreateToken}
       />
+      
+      <Toaster />
     </div>
   );
 };

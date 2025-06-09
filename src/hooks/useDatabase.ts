@@ -81,6 +81,10 @@ export const useDatabase = () => {
       if (error && error.code !== 'PGRST116') throw error;
       
       setCurrentUser(data);
+      // Load user tokens when user is found
+      if (data) {
+        await getUserTokens(data.id);
+      }
       return data;
     } catch (error) {
       console.error('Error getting user:', error);
@@ -94,9 +98,15 @@ export const useDatabase = () => {
     symbol: string;
     youtubeLink?: string;
     walletAddress: string;
+    image?: File;
   }) => {
     if (!currentUser) {
       throw new Error('User not found');
+    }
+
+    // Check if user already has a token
+    if (userTokens.length > 0) {
+      throw new Error('You can only create one token per account');
     }
 
     setLoading(true);
@@ -150,7 +160,10 @@ export const useDatabase = () => {
     try {
       const { data, error } = await supabase
         .from('tokens')
-        .select('*')
+        .select(`
+          *,
+          users!inner(username)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
