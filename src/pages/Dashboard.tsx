@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -28,6 +27,8 @@ const Dashboard = () => {
   const handleCreateToken = (tokenData: any) => {
     console.log('Creating token:', tokenData);
     // Here you would typically send this data to your backend
+    // For now, we'll just close the modal and the Profile component will handle adding the token
+    setShowCreateToken(false);
   };
 
   const username = localStorage.getItem('username') || 'User';
